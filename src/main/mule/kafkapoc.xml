@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:kafka="http://www.mulesoft.org/schema/mule/kafka" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/kafka http://www.mulesoft.org/schema/mule/kafka/current/mule-kafka.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="330c905d-4410-4065-bbba-3fc68de07a6c" >
+		<http:listener-connection host="0.0.0.0" port="8082" />
+	</http:listener-config>
+	<kafka:producer-config name="Apache_Kafka_Producer_configuration" doc:name="Apache Kafka Producer configuration" doc:id="fb267672-b1d6-4c23-bd9f-678a398db3fd" >
+		<kafka:producer-plaintext-connection >
+			<kafka:bootstrap-servers >
+				<kafka:bootstrap-server value="localhost:9092" />
+			</kafka:bootstrap-servers>
+		</kafka:producer-plaintext-connection>
+	</kafka:producer-config>
+	<kafka:consumer-config name="Apache_Kafka_Consumer_configuration" doc:name="Apache Kafka Consumer configuration" doc:id="5df14b26-c993-473d-abd3-8dfc47dcfaf5" >
+		<kafka:consumer-plaintext-connection groupId="test-consumer-group" >
+			<kafka:bootstrap-servers >
+				<kafka:bootstrap-server value="localhost:9092" />
+			</kafka:bootstrap-servers>
+			<kafka:topic-patterns >
+				<kafka:topic-pattern value="testTopic" />
+			</kafka:topic-patterns>
+		</kafka:consumer-plaintext-connection>
+	</kafka:consumer-config>
+	<flow name="KakfaPublisherFlow" doc:id="efdc7aab-6bf3-42ed-b929-f3b3997f262d" >
+		<http:listener doc:name="Listener" doc:id="b8e68535-2a61-425a-baad-44627e54e48d" config-ref="HTTP_Listener_config" path="/pushMessage" allowedMethods="POST"/>
+		<logger level="INFO" doc:name="Logger" doc:id="83c8a8c6-8a40-42c9-8c3c-fdccf4ec8bc1" message="The message recieved to be published is : #[payload]"/>
+		<kafka:publish doc:name="push messages to Kafka Topic" doc:id="871a43e1-40cc-43f7-9b58-4b91ad843db0" config-ref="Apache_Kafka_Producer_configuration" topic="#[payload.topicName]" key="#[now()]">
+			<kafka:message ><![CDATA[#[payload.message]]]></kafka:message>
+		</kafka:publish>
+		<set-payload value='#["Message is published to Kafka Topic !"]' doc:name="Set Payload" doc:id="878f9b0e-c4aa-4bb8-98d6-70b4181479db" />
+	</flow>
+	<flow name="kafkaConsumerFlow" doc:id="de09df70-a048-4544-8841-113446a25b99" >
+		<kafka:message-listener doc:name="Consume the message from Kafka Topic" doc:id="62752187-d6a7-460b-ac4f-2bbdb9a95dc6" config-ref="Apache_Kafka_Consumer_configuration"/>
+		<logger level="INFO" doc:name="Logger" doc:id="b4e695a1-3722-41e6-8d9d-9744a2154a5e" message="Message consumed: #[payload]"/>
+	</flow>
+</mule>
